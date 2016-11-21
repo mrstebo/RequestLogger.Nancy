@@ -2,6 +2,7 @@
 using Moq;
 using Nancy;
 using Nancy.Bootstrapper;
+using Nancy.Responses.Negotiation;
 using Nancy.Testing;
 using NUnit.Framework;
 
@@ -19,35 +20,61 @@ namespace RequestLogger.Nancy.Tests
 
         private Mock<IRequestLogger> _requestLogger;
 
-        [Test]
-        public void Enable_When_Pipelines_IsNull_ShouldThrow_ArgumentNullException()
+        private class TestWithLoggerModule : NancyModule
         {
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable((IPipelines) null, _requestLogger.Object));
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable((NancyModule) null, _requestLogger.Object));
+            public TestWithLoggerModule(IRequestLogger requestLogger)
+                : base("/test")
+            {
+                Logger.Enable(this, requestLogger);
+
+                Get["/"] = _ => Negotiate
+                    .WithStatusCode(200)
+                    .WithModel(new TestModel {Message = "TEST"})
+                    .WithContentType("application/json")
+                    .WithAllowedMediaRange(new MediaRange("application/json"));
+                Get["/error"] = _ => { throw new Exception("ERROR"); };
+            }
+        }
+
+        private class TestWithoutLoggerModule : NancyModule
+        {
+            public TestWithoutLoggerModule()
+                : base("/test")
+            {
+                Get["/"] = _ => Negotiate
+                    .WithStatusCode(200)
+                    .WithModel(new TestModel { Message = "TEST" })
+                    .WithContentType("application/json")
+                    .WithAllowedMediaRange(new MediaRange("application/json"));
+                Get["/error"] = _ => { throw new Exception("ERROR"); };
+            }
+        }
+
+        private class TestModel
+        {
+            public string Message { get; set; }
         }
 
         [Test]
-        public void Enable_When_RequestLogger_IsNull_ShouldThrow_ArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new Pipelines(), null));
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new ConfigurableNancyModule(), null));
-        }
-
-        [Test]
-        public void Enable_Should_LogRequest_For_Module()
+        public void Enable_Should_LogError_For_Application()
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
+                config.ApplicationStartup((container, pipelines) => Logger.Enable(pipelines, _requestLogger.Object));
                 config
-                    .Module<TestWithLoggerModule>()
-                    .Dependency(_requestLogger.Object);
+                    .Module<TestWithoutLoggerModule>();
             }));
 
-            browser.Get("/test", config => config.HttpRequest());
+            Assert.Throws<Exception>(() => browser.Get("/test/error", config =>
+            {
+                config.HostName("localhost");
+                config.HttpRequest();
+            }));
 
-            _requestLogger.Verify(x => x.Log(
+            _requestLogger.Verify(x => x.LogError(
                     It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>()),
+                    It.IsAny<ResponseData>(),
+                    It.IsAny<Exception>()),
                 Times.Once);
         }
 
@@ -61,7 +88,11 @@ namespace RequestLogger.Nancy.Tests
                     .Dependency(_requestLogger.Object);
             }));
 
-            Assert.Throws<Exception>(() => browser.Get("/test/error", config => config.HttpRequest()));
+            Assert.Throws<Exception>(() => browser.Get("/test/error", config =>
+            {
+                config.HostName("localhost");
+                config.HttpRequest();
+            }));
 
             _requestLogger.Verify(x => x.LogError(
                     It.IsAny<RequestData>(),
@@ -80,7 +111,11 @@ namespace RequestLogger.Nancy.Tests
                     .Module<TestWithoutLoggerModule>();
             }));
 
-            browser.Get("/test", config => config.HttpRequest());
+            browser.Get("/test", config =>
+            {
+                config.HostName("localhost");
+                config.HttpRequest();
+            });
 
             _requestLogger.Verify(x => x.Log(
                     It.IsAny<RequestData>(),
@@ -89,51 +124,39 @@ namespace RequestLogger.Nancy.Tests
         }
 
         [Test]
-        public void Enable_Should_LogError_For_Application()
+        public void Enable_Should_LogRequest_For_Module()
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => Logger.Enable(pipelines, _requestLogger.Object));
                 config
-                    .Module<TestWithoutLoggerModule>();
+                    .Module<TestWithLoggerModule>()
+                    .Dependency(_requestLogger.Object);
             }));
 
-            Assert.Throws<Exception>(() => browser.Get("/test/error", config => config.HttpRequest()));
+            browser.Get("/test", config =>
+            {
+                config.HostName("localhost");
+                config.HttpRequest();
+            });
 
-            _requestLogger.Verify(x => x.LogError(
+            _requestLogger.Verify(x => x.Log(
                     It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>(),
-                    It.IsAny<Exception>()),
+                    It.IsAny<ResponseData>()),
                 Times.Once);
         }
 
-        private class TestWithLoggerModule : NancyModule
+        [Test]
+        public void Enable_When_Pipelines_IsNull_ShouldThrow_ArgumentNullException()
         {
-            public TestWithLoggerModule(IRequestLogger requestLogger)
-                : base("/test")
-            {
-                Logger.Enable(this, requestLogger);
-
-                Get["/"] = _ => "GET";
-                Get["/error"] = _ => { throw new Exception("ERROR"); };
-                Post["/"] = _ => "POST";
-                Put["/"] = _ => "PUT";
-                Delete["/"] = _ => "DELETE";
-            }
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable((IPipelines) null, _requestLogger.Object));
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable((NancyModule) null, _requestLogger.Object));
         }
 
-        private class TestWithoutLoggerModule : NancyModule
+        [Test]
+        public void Enable_When_RequestLogger_IsNull_ShouldThrow_ArgumentNullException()
         {
-            public TestWithoutLoggerModule()
-                : base("/test")
-            {
-                Get["/"] = _ => "GET";
-                Get["/error"] = _ => { throw new Exception("ERROR"); };
-                Post["/"] = _ => "POST";
-                Put["/"] = _ => "PUT";
-                Delete["/"] = _ => "DELETE";
-            }
-
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new Pipelines(), null));
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new ConfigurableNancyModule(), null));
         }
     }
 }
