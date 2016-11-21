@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Nancy;
 using Nancy.Bootstrapper;
-using Nancy.Extensions;
 
 namespace RequestLogger.Nancy
 {
