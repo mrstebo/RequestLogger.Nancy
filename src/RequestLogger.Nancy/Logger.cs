@@ -1,6 +1,9 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using Nancy;
 using Nancy.Bootstrapper;
+using Nancy.Extensions;
 
 namespace RequestLogger.Nancy
 {
@@ -64,12 +67,40 @@ namespace RequestLogger.Nancy
 
         private static RequestData ExtractRequestData(Request request)
         {
-            return new RequestData();
+            var requestData = new RequestData
+            {
+                Url = request.Url,
+                HttpMethod = request.Method,
+                Header = request.Headers.ToDictionary(x => x.Key, y => y.Value.ToArray())
+            };
+
+            using (var ms = new MemoryStream())
+            {
+                request.Body.CopyTo(ms);
+                requestData.Content = ms.ToArray();
+            }
+
+            return requestData;
         }
 
         private static ResponseData ExtractResponseData(Response response)
         {
-            return new ResponseData();
+            var responseData = new ResponseData();
+
+            if (response == null)
+                return responseData;
+
+            responseData.StatusCode = (int) response.StatusCode;
+            responseData.ReasonPhrase = response.ReasonPhrase;
+            responseData.Header = response.Headers.ToDictionary(x => x.Key, y => new[] {y.Value});
+
+            using (var ms = new MemoryStream())
+            {
+                response.Contents = stream => stream.CopyTo(ms);
+                responseData.Content = ms.ToArray();
+            }
+
+            return responseData;
         }
     }
 }
