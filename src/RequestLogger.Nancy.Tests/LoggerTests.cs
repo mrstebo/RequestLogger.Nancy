@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using Nancy;
+using Nancy.Bootstrapper;
 using Nancy.Testing;
 using NUnit.Framework;
 
@@ -17,6 +18,20 @@ namespace RequestLogger.Nancy.Tests
         }
 
         private Mock<IRequestLogger> _requestLogger;
+
+        [Test]
+        public void Enable_When_Pipelines_IsNull_ShouldThrow_ArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable((IPipelines) null, _requestLogger.Object));
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable((NancyModule) null, _requestLogger.Object));
+        }
+
+        [Test]
+        public void Enable_When_RequestLogger_IsNull_ShouldThrow_ArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new Pipelines(), null));
+            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new ConfigurableNancyModule(), null));
+        }
 
         [Test]
         public void Enable_Should_LogRequest_For_Module()
