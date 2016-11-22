@@ -2,7 +2,6 @@
 using Moq;
 using Nancy;
 using Nancy.Bootstrapper;
-using Nancy.Responses.Negotiation;
 using Nancy.Testing;
 using NUnit.Framework;
 
@@ -27,7 +26,7 @@ namespace RequestLogger.Nancy.Tests
             {
                 RequestLogging.Enable(this, requestLogger);
 
-                Get["/"] = _ => Response.AsText("TEST", "text/html");
+                Get["/"] = _ => Response.AsText("TEST", "text/html").WithHeader("X-Test", "Hello");
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
         }
@@ -37,7 +36,7 @@ namespace RequestLogger.Nancy.Tests
             public TestWithoutLoggerModule()
                 : base("/test")
             {
-                Get["/"] = _ => Response.AsText("TEST", "text/html");
+                Get["/"] = _ => Response.AsText("TEST", "text/html").WithHeader("X-Test", "Hello");
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
         }
