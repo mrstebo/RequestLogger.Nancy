@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nancy;
@@ -70,7 +71,8 @@ namespace RequestLogger.Nancy
             {
                 Url = request.Url,
                 HttpMethod = request.Method,
-                Header = request.Headers.ToDictionary(x => x.Key, y => y.Value.ToArray())
+                Header = request.Headers.ToDictionary(x => x.Key, y => y.Value.ToArray()),
+                Content = new byte[] {}
             };
 
             using (var ms = new MemoryStream())
@@ -84,7 +86,11 @@ namespace RequestLogger.Nancy
 
         private static ResponseData ExtractResponseData(Response response)
         {
-            var responseData = new ResponseData();
+            var responseData = new ResponseData
+            {
+                Header = new Dictionary<string, string[]>(),
+                Content = new byte[] {}
+            };
 
             if (response != null)
             {
