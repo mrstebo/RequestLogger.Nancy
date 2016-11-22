@@ -130,7 +130,7 @@ namespace RequestLogger.Nancy.Tests
                         r.StatusCode == 200 &&
                         r.ReasonPhrase == "OK" &&
                         r.Header.ContainsKey("X-Test") &&
-                        r.Header["X-Test"].Any(y => y == "TEST"))),
+                        r.Header["X-Test"][0] == "TEST")),
                 Times.Once);
         }
 
@@ -148,6 +148,7 @@ namespace RequestLogger.Nancy.Tests
             {
                 config.HostName("localhost");
                 config.HttpRequest();
+                config.Header("Accept", "text/html");
             });
 
             _requestLogger.Verify(x => x.Log(
@@ -161,7 +162,7 @@ namespace RequestLogger.Nancy.Tests
                         r.StatusCode == 200 &&
                         r.ReasonPhrase == "OK" &&
                         r.Header.ContainsKey("X-Test") &&
-                        r.Header["X-Test"].Any(y => y == "TEST"))),
+                        r.Header["X-Test"][0] == "TEST")),
                 Times.Once);
         }
 
