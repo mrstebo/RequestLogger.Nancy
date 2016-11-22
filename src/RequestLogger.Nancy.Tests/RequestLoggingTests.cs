@@ -63,7 +63,7 @@ namespace RequestLogger.Nancy.Tests
             {
                 config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
                 config
-                    .Module<TestWithoutLoggerModule>();
+                    .Module<TestModule>();
             }));
 
             Assert.Throws<Exception>(() => browser.Get("/test/error", config =>
@@ -103,13 +103,13 @@ namespace RequestLogger.Nancy.Tests
         }
 
         [Test]
-        public void Enable_Should_LogRequest_For_Application()
+        public void Enable_Should_Log_GET_Request_For_Application()
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
                 config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
                 config
-                    .Module<TestWithoutLoggerModule>();
+                    .Module<TestModule>();
             }));
 
             browser.Get("/test", config =>
@@ -136,7 +136,7 @@ namespace RequestLogger.Nancy.Tests
         }
 
         [Test]
-        public void Enable_Should_LogRequest_For_Module()
+        public void Enable_Should_Log_GET_Request_For_Module()
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
