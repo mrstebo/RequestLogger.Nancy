@@ -21,39 +21,38 @@ namespace RequestLogger.Nancy.Tests
 
         private Mock<IRequestLogger> _requestLogger;
 
-        private class TestWithLoggerModule : NancyModule
+        private class TestModule : NancyModule
         {
-            public TestWithLoggerModule(IRequestLogger requestLogger)
+            public TestModule()
                 : base("/test")
             {
-                RequestLogging.Enable(this, requestLogger);
+                Get["/"] = GetSuccessResponse;
+                Get["/error"] = GetErrorResponse;
+                Post["/"] = GetSuccessResponse;
+                Put["/"] = GetSuccessResponse;
+                Delete["/"] = GetSuccessResponse;
+            }
 
-                Get["/"] = _ =>
-                {
-                    var response = Response.AsText("TEST", "text/html")
+            private Response GetSuccessResponse(dynamic parameters)
+            {
+                var response = Response.AsText("TEST", "text/html")
                         .WithHeader("X-Test", "TEST")
                         .WithStatusCode(200);
-                    response.ReasonPhrase = "OK";
-                    return response;
-                };
-                Get["/error"] = _ => { throw new Exception("ERROR"); };
+                response.ReasonPhrase = "OK";
+                return response;
+            }
+
+            private static Response GetErrorResponse(dynamic parameters)
+            {
+                throw new Exception("ERROR");
             }
         }
 
-        private class TestWithoutLoggerModule : NancyModule
+        private class TestWithLoggerModule : TestModule
         {
-            public TestWithoutLoggerModule()
-                : base("/test")
+            public TestWithLoggerModule(IRequestLogger requestLogger)
             {
-                Get["/"] = _ =>
-                {
-                    var response = Response.AsText("TEST", "text/html")
-                        .WithHeader("X-Test", "TEST")
-                        .WithStatusCode(200);
-                    response.ReasonPhrase = "OK";
-                    return response;
-                };
-                Get["/error"] = _ => { throw new Exception("ERROR"); };
+                RequestLogging.Enable(this, requestLogger);
             }
         }
 
