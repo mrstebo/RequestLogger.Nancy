@@ -61,21 +61,33 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
-                config
-                    .Module<TestModule>();
+                config.ApplicationStartup((container, pipelines) =>
+                {
+                    RequestLogging.Enable(pipelines, _requestLogger.Object);
+                });
+                config.Module<TestModule>();
             }));
 
             Assert.Throws<Exception>(() => browser.Get("/test/error", config =>
             {
                 config.HostName("localhost");
                 config.HttpRequest();
+                config.Header("Accept", "text/html");
             }));
 
             _requestLogger.Verify(x => x.LogError(
-                    It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>(),
-                    It.IsAny<Exception>()),
+                    It.Is<RequestData>(r =>
+                        r.Url == new Uri("http://localhost/test/error") &&
+                        r.HttpMethod == "GET" &&
+                        r.Header.ContainsKey("Accept") &&
+                        r.Header["Accept"].Any(y => y.Contains("text/html")) &&
+                        r.Content.Length == 0),
+                    It.Is<ResponseData>(r =>
+                        r.StatusCode == 0 &&
+                        r.ReasonPhrase == null &&
+                        r.Header.Count == 0 &&
+                        r.Content.Length == 0),
+                    It.Is<Exception>(ex => ex.Message == "ERROR")),
                 Times.Once);
         }
 
@@ -93,12 +105,22 @@ namespace RequestLogger.Nancy.Tests
             {
                 config.HostName("localhost");
                 config.HttpRequest();
+                config.Header("Accept", "text/html");
             }));
 
             _requestLogger.Verify(x => x.LogError(
-                    It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>(),
-                    It.IsAny<Exception>()),
+                    It.Is<RequestData>(r =>
+                        r.Url == new Uri("http://localhost/test/error") &&
+                        r.HttpMethod == "GET" &&
+                        r.Header.ContainsKey("Accept") &&
+                        r.Header["Accept"].Any(y => y.Contains("text/html")) &&
+                        r.Content.Length == 0),
+                    It.Is<ResponseData>(r =>
+                        r.StatusCode == 0 &&
+                        r.ReasonPhrase == null &&
+                        r.Header.Count == 0 &&
+                        r.Content.Length == 0),
+                    It.Is<Exception>(ex => ex.Message == "ERROR")),
                 Times.Once);
         }
 
