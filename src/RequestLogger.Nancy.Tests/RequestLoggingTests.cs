@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using Moq;
 using Nancy;
 using Nancy.Bootstrapper;
@@ -130,7 +131,8 @@ namespace RequestLogger.Nancy.Tests
                         r.StatusCode == 200 &&
                         r.ReasonPhrase == "OK" &&
                         r.Header.ContainsKey("X-Test") &&
-                        r.Header["X-Test"][0] == "TEST")),
+                        r.Header["X-Test"][0] == "TEST" &&
+                        r.Content.SequenceEqual(Encoding.UTF8.GetBytes("TEST")))),
                 Times.Once);
         }
 
@@ -162,7 +164,8 @@ namespace RequestLogger.Nancy.Tests
                         r.StatusCode == 200 &&
                         r.ReasonPhrase == "OK" &&
                         r.Header.ContainsKey("X-Test") &&
-                        r.Header["X-Test"][0] == "TEST")),
+                        r.Header["X-Test"][0] == "TEST" &&
+                        r.Content.SequenceEqual(Encoding.UTF8.GetBytes("TEST")))),
                 Times.Once);
         }
 
