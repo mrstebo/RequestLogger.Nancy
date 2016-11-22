@@ -10,7 +10,7 @@ namespace RequestLogger.Nancy.Tests
 {
     [TestFixture]
     [Parallelizable]
-    public class LoggerTests
+    public class RequestLoggingTests
     {
         [SetUp]
         public void SetUp()
@@ -25,13 +25,9 @@ namespace RequestLogger.Nancy.Tests
             public TestWithLoggerModule(IRequestLogger requestLogger)
                 : base("/test")
             {
-                Logger.Enable(this, requestLogger);
+                RequestLogging.Enable(this, requestLogger);
 
-                Get["/"] = _ => Negotiate
-                    .WithStatusCode(200)
-                    .WithModel(new TestModel {Message = "TEST"})
-                    .WithContentType("application/json")
-                    .WithAllowedMediaRange(new MediaRange("application/json"));
+                Get["/"] = _ => Response.AsText("TEST", "text/html");
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
         }
@@ -41,11 +37,7 @@ namespace RequestLogger.Nancy.Tests
             public TestWithoutLoggerModule()
                 : base("/test")
             {
-                Get["/"] = _ => Negotiate
-                    .WithStatusCode(200)
-                    .WithModel(new TestModel { Message = "TEST" })
-                    .WithContentType("application/json")
-                    .WithAllowedMediaRange(new MediaRange("application/json"));
+                Get["/"] = _ => Response.AsText("TEST", "text/html");
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
         }
@@ -60,7 +52,7 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => Logger.Enable(pipelines, _requestLogger.Object));
+                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
                 config
                     .Module<TestWithoutLoggerModule>();
             }));
@@ -106,7 +98,7 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => Logger.Enable(pipelines, _requestLogger.Object));
+                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
                 config
                     .Module<TestWithoutLoggerModule>();
             }));
@@ -148,15 +140,15 @@ namespace RequestLogger.Nancy.Tests
         [Test]
         public void Enable_When_Pipelines_IsNull_ShouldThrow_ArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable((IPipelines) null, _requestLogger.Object));
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable((NancyModule) null, _requestLogger.Object));
+            Assert.Throws<ArgumentNullException>(() => RequestLogging.Enable((IPipelines) null, _requestLogger.Object));
+            Assert.Throws<ArgumentNullException>(() => RequestLogging.Enable((NancyModule) null, _requestLogger.Object));
         }
 
         [Test]
         public void Enable_When_RequestLogger_IsNull_ShouldThrow_ArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new Pipelines(), null));
-            Assert.Throws<ArgumentNullException>(() => Logger.Enable(new ConfigurableNancyModule(), null));
+            Assert.Throws<ArgumentNullException>(() => RequestLogging.Enable(new Pipelines(), null));
+            Assert.Throws<ArgumentNullException>(() => RequestLogging.Enable(new ConfigurableNancyModule(), null));
         }
     }
 }

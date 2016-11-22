@@ -6,7 +6,7 @@ using Nancy.Bootstrapper;
 
 namespace RequestLogger.Nancy
 {
-    public static class Logger
+    public static class RequestLogging
     {
         public static void Enable(IPipelines pipelines, IRequestLogger requestLogger)
         {
@@ -86,17 +86,17 @@ namespace RequestLogger.Nancy
         {
             var responseData = new ResponseData();
 
-            if (response == null)
-                return responseData;
-
-            responseData.StatusCode = (int) response.StatusCode;
-            responseData.ReasonPhrase = response.ReasonPhrase;
-            responseData.Header = response.Headers.ToDictionary(x => x.Key, y => new[] {y.Value});
-
-            using (var ms = new MemoryStream())
+            if (response != null)
             {
-                response.Contents = stream => stream.CopyTo(ms);
-                responseData.Content = ms.ToArray();
+                responseData.StatusCode = (int) response.StatusCode;
+                responseData.ReasonPhrase = response.ReasonPhrase;
+                responseData.Header = response.Headers.ToDictionary(x => x.Key, y => new[] {y.Value});
+
+                using (var ms = new MemoryStream())
+                {
+                    response.Contents(ms);
+                    responseData.Content = ms.ToArray();
+                }
             }
 
             return responseData;
