@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Moq;
 using Nancy;
 using Nancy.Bootstrapper;
@@ -26,7 +27,14 @@ namespace RequestLogger.Nancy.Tests
             {
                 RequestLogging.Enable(this, requestLogger);
 
-                Get["/"] = _ => Response.AsText("TEST", "text/html").WithHeader("X-Test", "Hello");
+                Get["/"] = _ =>
+                {
+                    var response = Response.AsText("TEST", "text/html")
+                        .WithHeader("X-Test", "TEST")
+                        .WithStatusCode(200);
+                    response.ReasonPhrase = "OK";
+                    return response;
+                };
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
         }
@@ -36,14 +44,16 @@ namespace RequestLogger.Nancy.Tests
             public TestWithoutLoggerModule()
                 : base("/test")
             {
-                Get["/"] = _ => Response.AsText("TEST", "text/html").WithHeader("X-Test", "Hello");
+                Get["/"] = _ =>
+                {
+                    var response = Response.AsText("TEST", "text/html")
+                        .WithHeader("X-Test", "TEST")
+                        .WithStatusCode(200);
+                    response.ReasonPhrase = "OK";
+                    return response;
+                };
                 Get["/error"] = _ => { throw new Exception("ERROR"); };
             }
-        }
-
-        private class TestModel
-        {
-            public string Message { get; set; }
         }
 
         [Test]
@@ -106,11 +116,21 @@ namespace RequestLogger.Nancy.Tests
             {
                 config.HostName("localhost");
                 config.HttpRequest();
+                config.Header("Accept", "text/html");
             });
 
             _requestLogger.Verify(x => x.Log(
-                    It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>()),
+                    It.Is<RequestData>(r =>
+                        r.Url == new Uri("http://localhost/test") &&
+                        r.HttpMethod == "GET" &&
+                        r.Header.ContainsKey("Accept") &&
+                        r.Header["Accept"].Any(y => y.Contains("text/html")) &&
+                        r.Content.Length == 0),
+                    It.Is<ResponseData>(r =>
+                        r.StatusCode == 200 &&
+                        r.ReasonPhrase == "OK" &&
+                        r.Header.ContainsKey("X-Test") &&
+                        r.Header["X-Test"].Any(y => y == "TEST"))),
                 Times.Once);
         }
 
@@ -131,8 +151,17 @@ namespace RequestLogger.Nancy.Tests
             });
 
             _requestLogger.Verify(x => x.Log(
-                    It.IsAny<RequestData>(),
-                    It.IsAny<ResponseData>()),
+                    It.Is<RequestData>(r =>
+                        r.Url == new Uri("http://localhost/test") &&
+                        r.HttpMethod == "GET" &&
+                        r.Header.ContainsKey("Accept") &&
+                        r.Header["Accept"].Any(y => y.Contains("text/html")) &&
+                        r.Content.Length == 0),
+                    It.Is<ResponseData>(r =>
+                        r.StatusCode == 200 &&
+                        r.ReasonPhrase == "OK" &&
+                        r.Header.ContainsKey("X-Test") &&
+                        r.Header["X-Test"].Any(y => y == "TEST"))),
                 Times.Once);
         }
 
