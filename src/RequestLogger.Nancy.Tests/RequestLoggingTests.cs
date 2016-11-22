@@ -129,9 +129,11 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
-                config
-                    .Module<TestModule>();
+                config.ApplicationStartup((container, pipelines) =>
+                {
+                    RequestLogging.Enable(pipelines, _requestLogger.Object);
+                });
+                config.Module<TestModule>();
             }));
 
             browser.Get("/test", config =>
@@ -195,9 +197,11 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
-                config
-                    .Module<TestModule>();
+                config.ApplicationStartup((container, pipelines) =>
+                {
+                    RequestLogging.Enable(pipelines, _requestLogger.Object);
+                });
+                config.Module<TestModule>();
             }));
 
             browser.Post("/test", config =>
@@ -263,9 +267,11 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
-                config
-                    .Module<TestModule>();
+                config.ApplicationStartup((container, pipelines) =>
+                {
+                    RequestLogging.Enable(pipelines, _requestLogger.Object);
+                });
+                config.Module<TestModule>();
             }));
 
             browser.Put("/test", config =>
@@ -331,9 +337,11 @@ namespace RequestLogger.Nancy.Tests
         {
             var browser = new Browser(new ConfigurableBootstrapper(config =>
             {
-                config.ApplicationStartup((container, pipelines) => RequestLogging.Enable(pipelines, _requestLogger.Object));
-                config
-                    .Module<TestModule>();
+                config.ApplicationStartup((container, pipelines) =>
+                {
+                    RequestLogging.Enable(pipelines, _requestLogger.Object);
+                });
+                config.Module<TestModule>();
             }));
 
             browser.Delete("/test", config =>
